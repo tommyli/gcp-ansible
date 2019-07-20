@@ -1,0 +1,8 @@
+---
+- name: Create GCP Compute Engine VM Instance
+  hosts: localhost
+  gather_facts: no
+  connection: local
+
+  roles:
+    - role: gcp-ansible

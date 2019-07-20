@@ -1,0 +1,5 @@
+---
+instance_name: gcp-ansible
+machine_type: g1-small
+disk_size_gb: 100
+ip_cidr_range: 172.16.0.0/28

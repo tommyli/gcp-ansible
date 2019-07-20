@@ -1,0 +1,56 @@
+---
+- name: delete an instance
+  gcp_compute_instance:
+    name: "{{ instance_name }}"
+    zone: "{{ lookup('env', 'GCP_ZONE') }}"
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+    state: absent
+
+- name: delete an address
+  gcp_compute_address:
+    name: "{{ instance_name }}"
+    region: "{{ lookup('env', 'GCP_REGION') }}"
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+    state: absent
+
+- name: delete a firewall
+  gcp_compute_firewall:
+    name: ansible-firewall
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+    state: absent
+
+- name: register the existing network
+  gcp_compute_network:
+    name: gcp-ansible-network
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+  register: network
+
+- debug:
+    var: network
+
+- name: delete a subnetwork
+  gcp_compute_subnetwork:
+    name: ansible-subnet
+    region: "{{ lookup('env', 'GCP_REGION') }}"
+    network: "{{ network }}"
+    ip_cidr_range: "{{ ip_cidr_range }}"
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+    state: absent
+
+- name: delete a network
+  gcp_compute_network:
+    name: gcp-ansible-network
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+    state: absent

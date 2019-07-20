@@ -1,0 +1,13 @@
+# TODO - For some reason, this file cannot use variables, manually override for now but don't commit secrets.
+
+plugin: gcp_compute
+regions:
+  - australia-southeast1
+zones:
+  - australia-southeast1-b
+auth_kind: serviceaccount
+scopes:
+  - https://www.googleapis.com/auth/compute
+service_account_file: <path to secrets file>
+projects:
+  - firefire-gcp-1

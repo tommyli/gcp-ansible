@@ -1,0 +1,2 @@
+---
+- import_playbook: playbooks/10_infra.yml

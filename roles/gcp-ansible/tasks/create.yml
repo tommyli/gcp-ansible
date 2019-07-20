@@ -1,0 +1,88 @@
+---
+- name: Create VPC Network
+  gcp_compute_network:
+    name: gcp-ansible-network
+    auto_create_subnetworks: yes
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+    state: present
+  register: network
+
+- name: Create subnet within above VPC network
+  gcp_compute_subnetwork:
+    name: gcp-ansible-subnet
+    region: "{{ lookup('env', 'GCP_REGION') }}"
+    network: "{{ network }}"
+    ip_cidr_range: "{{ ip_cidr_range }}"
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+    state: present
+  register: subnet
+
+- name: Create firewall rule to allow port 80 and 22 for all source IPs
+  gcp_compute_firewall:
+    name: ansible-firewall
+    network: "{{ network }}"
+    allowed:
+    - ip_protocol: tcp
+      ports: ['80','22']
+    target_tags:
+      - gcp-ansible
+    source_ranges: ['0.0.0.0/0']
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+    state: present
+  register: firewall
+
+- name: Create IP address for instance name
+  gcp_compute_address:
+    name: "{{ instance_name }}"
+    region: "{{ lookup('env', 'GCP_REGION') }}"
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+    state: present
+  register: address
+
+- name: Create disk for new instance
+  gcp_compute_disk:
+    name: "{{ instance_name }}"
+    size_gb: "{{ disk_size_gb }}"
+    source_image: 'projects/centos-cloud/global/images/centos-7-v20190116'
+    zone: "{{ lookup('env', 'GCP_ZONE') }}"
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+    state: present
+  register: disk
+
+- name: Create new instance
+  gcp_compute_instance:
+    state: present
+    name: "{{ instance_name }}"
+    machine_type: "{{ machine_type }}"
+    disks:
+    - auto_delete: true
+      boot: true
+      source: "{{ disk }}"
+    network_interfaces:
+    - network: "{{ network }}"
+      subnetwork: "{{ subnet }}"
+      access_configs:
+      - name: External NAT
+        nat_ip: "{{ address }}"
+        type: ONE_TO_ONE_NAT
+    zone: "{{ lookup('env', 'GCP_ZONE') }}"
+    tags:
+      items:
+        - gcp-ansible
+    project: "{{ lookup('env', 'GCP_PROJECT') }}"
+    auth_kind: "{{ lookup('env', 'GCP_AUTH_KIND') }}"
+    service_account_file: "{{ lookup('env', 'GCP_SERVICE_ACCOUNT_FILE') }}"
+  register: instance
+
+- debug:
+    var: instance
